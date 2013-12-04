@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+    <title>Acceleration Example</title>
+
+    <script type="text/javascript" charset="utf-8" src="cordova.js"></script>
+
+    <script type="text/javascript" src="canvasjs.min.js"></script>
+
+<script type="text/javascript">
+
+
+const dataLength = 500; // maximum number of data points visible at any one time
+
+const requested_update_freq = 500; //requested update frequency in milliseconds
+
+
+var data = []; // this is where the accelerometer data for the chart gets stored
+
+var chart;
+
+var start_time; // so that we calculate how many seconds have passed since we started
+
+var smoothed_update_freq; //stores the freq of update of sensor output
+
+var prev_time; //stores the previous update time
+
+
+//listen for 'deviceready' event and specift handler
+
+document.addEventListener("deviceready", onDeviceReady, false);
+
+
+
+//handler for the 'deviceready' event
+
+function onDeviceReady() {
+
+        start_time = new Date().getTime();
+
+        prev_time = start_time;
+
+        smoothed_update_freq = requested_update_freq;
+
+        startWatch();
+
+initChart();
+
+}
+
+
+
+
+//start listening for accelerometer updates
+
+function startWatch() {
+
+
+// Update acceleration at requested rate
+
+        var options = { frequency: requested_update_freq };
+
+//setup onSuccess and onError callback methods
+
+        watchID = navigator.accelerometer.watchAcceleration(onSuccess, onError, options);
+
+    }
+
+    
+
+    
+
+//initialise the chart using canvasJS
+
+function initChart()  {
+
+chart = new CanvasJS.Chart("chartContainer",{
+
+title :{ text: "Accelerometer Data"}, //the charts title
+
+data: [{ type: "line", dataPoints: data}]  //the chart type and the data source
+
+});
+
+}
+
+//updates the chart when called
+
+function updateChart(time, value) {
+
+data.push({ x: time, y: value }); //add new time and accelerometer value to data
+
+if (data.length > dataLength) data.shift(); //remove old data if too large
+
+chart.render(); //redraw the chart to reflect new data
+
+}
+
+
+
+// an acceleration update event has occured - so handle this new value
+
+    function onSuccess(acceleration) {
+
+        
+
+        //convert the time stamp into seconds that have passed since the start
+
+            var time = (acceleration.timestamp - start_time) / 1000;
+
+            
+
+            //calculate freq of updates
+
+            var current_freq = acceleration.timestamp - prev_time;
+
+            prev_time = acceleration.timestamp;
+
+           smoothed_update_freq = (0.01 * current_freq) + (0.99 * smoothed_update_freq);
+
+            
+
+            //calculate the overall acceleration force experience by the device 
+
+            var sum_acceleration = Math.sqrt(
+
+            acceleration.x * acceleration.x +
+
+            acceleration.y * acceleration.y +
+
+            acceleration.z * acceleration.z
+
+            );
+
+        
+
+        //write the new values to the display
+
+        var element = document.getElementById('accelerometer');
+
+element.innerHTML = 'Acceleration X: ' + acceleration.x + '<br />' +
+
+                           'Acceleration Y: ' + acceleration.y + '<br />' +
+
+                                'Acceleration Z: ' + acceleration.z + '<br />' +
+
+                                'Acceleration Sum: ' + sum_acceleration + '<br />' +
+
+                                'Timestamp: '      + acceleration.timestamp + '<br />' +
+
+                                'Freq: '         + smoothed_update_freq + '<br />';
+
+            
+
+        
+
+                 
+
+            //update the chart with these new values           
+
+           updateChart(time, sum_acceleration);
+
+    }
+
+    //accelerometer watch has failed
+
+    function onError() {
+
+        alert('Error!');
+
+    }
+
+</script>
+
+</head>
+
+<body>
+
+<div id="accelerometer">Waiting...</div>
+
+<div id="chartContainer" style="height: 300px; width:100%;">
+
+</div>
+
+</body>
+
+</html>
