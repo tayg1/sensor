@@ -119,7 +119,7 @@ chart.render(); //redraw the chart to reflect new data
 
             prev_time = acceleration.timestamp;
 
-           smoothed_update_freq = (1 * current_freq) + (0 * smoothed_update_freq);
+           smoothed_update_freq = (0.01 * current_freq) + (0.99 * smoothed_update_freq);
 
             
 
